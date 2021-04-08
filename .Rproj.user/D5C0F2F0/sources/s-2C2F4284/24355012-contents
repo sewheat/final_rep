@@ -1,0 +1,443 @@
+---
+title: 'Problem Set #2'
+author: "Sewheat Haile"
+date: "3/20/2021"
+output: pdf_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(pacman)
+p_load(tidyverse, foreign, corrplot, stargazer, coefplot, effects)
+```
+
+# Part 1: The Replication Project
+
+## Q1
+
+### Part A. 
+
+The authors' research questions are related to pay gaps between white and black people and between men and women. Specifically, they seek to understand how the decline in the racial pay gap over time "was affected by different sources and assumed different trajectories for men and for women" (Mandel & Semyonov 2016:1040). The authors examine how several factors impact changes in the racial pay gap, such as occupational segregation, human capital, and demographic characteristics. They also examine how the impact of these variables have changed over time.
+
+### Part B.
+
+Most of the literature on the racial pay gap focuses solely on the male population. In addition, there is disagreement among scholars as to the sources, causes, or trajectory of the decline in the racial pay gap, and how this decline differs across gender groups (if at all). To fill these gaps, the authors complete a longitudinal analysis of the decline in the racial pay gap among both men and women, including all years examined in other studies and extending their analysis into the new millennium.
+
+The author's findings support the intersectionality perspective, where the size, sources, and decline of the racial pay gap differs among men and women. However, the authors' findings contradict the double disadvantage thesis which postulates that black women will experience the compounded disadvantages associated with race and gender. Instead, the author's find that the pay gap between black women and white women is significantly less than the pay gap between black men and white men. While black women do receive the lowest pay of the four categories, their pay is not as low as the double disadvantage thesis would suggest.
+
+These findings also show that the racial pay gap has shown similar temporal trends across the gender groups. For both men and women, the racial pay gap declined from the 1970s to 2000 and then widened thereafter. These findings show an important turn in the history of the racial pay gap in the US.
+
+### Part C.
+
+The population that the authors are making inferences about are white and black male and female workers in the Midwestern, Southern, Western, and Northeastern US. Age is restricted to 25-59 years old and the top and bottom earning percentiles are eliminated to remove outliers. They focus on the time period from 1970-2010, utilizing data for the years 1970, 1980, 1990, 2000, and 2010.
+
+
+### Part D.
+
+No, the authors are unable to obtain data from the entire population. They solve this problem by using the census and ACS data sets, which draw from a random sample of the population.
+
+### Part E.
+
+The authors did not collect the data themselves. Instead they obtained data from Integrated Public Use Microdata Series (IPUMS). They used 5% census samples for 1980 and 2000, 1% census samples for 1970 and 1990, and American Community Survey (ACS) data for 2010. The observations within each sample were restricted to white and black men and women, aged 25-59, from all earning percentiles except the top and bottom.
+
+## Q2
+
+-year
+
+-race
+
+-sex
+
+-age
+
+-region (Midwest, South, West, Northeast [the omitted category]) 
+
+-metropolitan area (= 1)
+
+-marital status (married = 1) 
+
+-nativity status (foreign-born = 1) 
+
+-number of children
+
+-presence of a child under age 5 (= 1) 
+
+-level of education (four ordinal categories: less than high school, high school graduate, some college, and college graduate [the omitted category])
+
+-years of schooling
+
+-potential work experience and its squared term (age – years of schooling – 6)
+
+-wages and salary
+
+-weekly working hours
+
+-weeks worked
+
+-weekly wage (calculated by total wages and salary / weeks worked)
+
+-occupation (about 80 occupational categories that are comparable across decades)
+
+-sector (public = 1)
+
+\pagebreak
+
+## Q3
+
+![IPUMS Samples and Variables](IPUMS_variables.png)
+
+
+\pagebreak
+
+# Part 2: Regression
+
+## Q1
+
+### Part A.
+
+```{r regression q 1a}
+# import data
+sat_math_df <- read.dta("sat_math.dta")
+
+# 1. group_by() to group by gender 
+# 2. summarise() to find mean of all variables
+# 3. pivot_longer() to bring all columns except "female" into rows
+# 4. pivot_wider() to bring rows from "female" into two separate columns, by gender
+# 5. rename() to make column names more intuitive
+# 6. mutate() to remove redundant "_mean" from variable names
+sat_math_df %>%
+  group_by(female) %>%
+  summarise(sat_math_mean = mean(sat_math),
+            black_mean = mean(black),
+            other_mean = mean(other),
+            meduy_mean = mean(meduy),
+            feduy_mean = mean(feduy),
+            hours_mean = mean(hours),
+            IQ_mean = mean(IQ)) %>%
+  pivot_longer(-female, values_to = "mean") %>%
+  pivot_wider(names_from = female, values_from = mean) %>%
+  rename("variable" = "name", "male_mean" = "0", "female_mean" = "1") %>%
+  mutate(variable = str_remove(variable, "_mean"))
+```
+### Part B.
+
+```{r regression q 1b}
+# create correlation matrix
+sat_math_corr.max <- cor(sat_math_df)
+
+# plot:
+# only the upper half of table is displayed,
+# table is clustered hierarchically by corr coefficient,
+# label color is changed to black,
+# label is tilted by 45 degrees
+corrplot(sat_math_corr.max,
+         method = "number",
+         type = "upper",
+         order="hclust",
+         tl.col="black", 
+         tl.srt=45)
+```
+
+## Q2
+
+### Part A.
+
+```{r regression q2 a}
+# scatter plot where x = IQ and y = SAT math score
+sat_math_df %>%
+  ggplot(aes(x = IQ, y = sat_math)) +
+  geom_point(shape = 1, alpha = 0.7) +
+  labs(title = "Relationship Between IQ and SAT Math Score",
+       x = "IQ",
+       y = "SAT Math Score")
+```
+
+### Part B.
+
+```{r regression q2 b}
+# add fitted line to scatter plot where x = IQ and y = SAT math score
+sat_math_df %>%
+  ggplot(aes(x = IQ, y = sat_math)) +
+  geom_point(shape = 1, alpha = 0.7) +
+  geom_smooth(method = "lm") +
+  labs(title = "Relationship Between IQ and SAT Math Score",
+       subtitle = "Shown with fitted line",
+       x = "IQ",
+       y = "SAT Math Score")
+```
+
+### Part C.
+
+```{r regression q2 c}
+# recode "female" as new variable called "gender"
+sat_math_df <- sat_math_df %>%
+    mutate(
+    gender = ifelse(female == 1,    # If female equals to 1
+                    "female",       # then gender (the variable) equals "female"
+                    "male")         # else gender (the variable) equals to "male"
+    )
+
+# scatter plot where x = IQ and y = SAT math score, grouped by new "gender" variable
+sat_math_df %>%
+  ggplot(aes(x = IQ, y = sat_math, color = gender)) +
+  geom_point(shape = 1, alpha = 0.7) +
+  labs(title = "Relationship Between IQ and SAT Math Score",
+       subtitle = "Grouped by Gender",
+       x = "IQ",
+       y = "SAT Math Score")
+```
+
+### Part D.
+
+```{r regression q2 d}
+# add fitted line to scatter plot with new "gender" variable
+sat_math_df %>%
+  ggplot(aes(x = IQ, y = sat_math, color = gender)) +
+  geom_point(shape = 1, alpha = 0.7) +
+  geom_smooth(method = "lm") +
+  labs(title = "Relationship Between IQ and SAT Math Score",
+       subtitle = "Grouped by gender and shown with fitted line",
+       x = "IQ",
+       y = "SAT Math Score")
+```
+
+## Q3
+
+### Part A.
+
+These preliminary findings show that IQ has the strongest correlation with SAT math score, followed by mother's schooling, father's schooling, and gender. Math score tends to increase as IQ increases, and women tend to score better than men on the SAT math section even when IQ is the same.
+There also seems to be a relationship between mother's schooling and IQ, as well as father's schooling and IQ. However the correlation for mother's schooling and IQ is stronger.
+
+
+### Part B.
+
+I think it would be interesting to explore the different relationships that mother's schooling and father's schooling have with SAT math score. Given that both variables are correlated with SAT score, I think it would be interesting to examine the slope of each variable's relationship with SAT score.
+
+```{r regression q3 b i}
+# create new df with relevant variables
+# select sat math score, mother's schooling, and father's schooling as variables
+# bring mother's schooling and father's schooling into one variable named "parent"
+# and create new variable for the values of both mother's and father's schooling
+# rename observations in "parent" to be more intuitive
+sat_math_df.eduy <- sat_math_df %>%
+  select(sat_math, meduy, feduy) %>%
+  pivot_longer(-sat_math, names_to = "parent", values_to = "parent_eduy") %>%
+  mutate(
+  parent = ifelse(parent == c("meduy"),    # If parent (the variable) equals to meduy
+                    "mother",       # then parent (the variable) equals "mother"
+                    "father")         # else parent (the variable) equals to "father"
+    )
+
+# scatter plot where x = parent education and y = SAT math score, grouped by new "parent" variable,
+# with fitted line
+sat_math_df.eduy %>%
+  ggplot(aes(x = parent_eduy, y = sat_math, color = parent)) +
+  geom_point(shape = 1, alpha = 0.7) +
+  geom_smooth(method = "lm") +
+  labs(title = "Relationship Between Parent Education and SAT Math Score",
+       subtitle = "Parent education grouped by gender of parent",
+       x = "Years of Parent Schooling",
+       y = "SAT Math Score")
+```
+
+The graph implies that SAT math score may show a greater increase when father's schooling increases than when mother's schooling increases, below 13 years of schooling. However above 13 years of schooling, SAT math score may show a greater increase when mother's schooling increases than when father's schooling increases. It is important to note that these slopes are not markedly different in the graph and their confidence intervals appear to overlap, therefore we can't confirm whether these fitted lines are significantly different from each other. We can check the significance by running regressions and examining the confidence intervals for $\beta_{meduy}$, $\beta_{feduy}$, and $\beta_0$.
+
+
+```{r regression q3 b ii}
+lm_meduy <- lm(sat_math ~ meduy, data = sat_math_df)
+summary(lm_meduy)
+
+lm_feduy <- lm(sat_math ~ feduy, data = sat_math_df)
+summary(lm_feduy)
+```
+
+$\beta_{0} = 394.6137$, $se_0 = 8.6318$, $\beta_{meduy} = 10.8429$, $se_{meduy} = 0.6922$
+
+$\beta_{0}$ Confidence Interval = [394.6137 - 1.96 * 8.6318, 394.6137 + 1.96 * 8.6318] = [377.6954, 411.532]
+
+$\beta_{meduy}$ Confidence Interval = [10.8429 - 1.96 * 0.6922, 10.8429 + 1.96 * 0.6922] = [9.486188, 12.19961]  
+
+//
+
+$\beta_{0} = 426.7881$, $se_0 = 8.9314$, $\beta_{feduy} = 8.3139$, $se_{feduy} = 0.7287$
+
+$\beta_{0}$ Confidence Interval = [426.7881 - 1.96 * 8.9314, 426.7881 + 1.96 * 8.9314] = [409.2826, 444.2936]
+
+$\beta_{feduy}$ Confidence Interval = [8.3139 - 1.96 * 0.7287, 8.3139 + 1.96 * 0.7287] = [6.885648, 9.742152]  
+
+//
+    
+The confidence intervals for the $\beta_{0}$ in each equation do overlap. Similarly, the confidence intervals for $\beta_{meduy}$ and $\beta_{feduy}$ do overlap. This means that the relationship between SAT score and meduy is not significantly different from the relationship between SAT score and feduy.
+
+## Q4
+
+```{r regression q4 a, results='asis'}
+# build regression model where y = sat_math and x = IQ
+m1 <- lm(sat_math ~ IQ, data = sat_math_df)
+
+# add female, black, and other as IVs
+m2 <- lm(sat_math ~ IQ + female + black + other, data = sat_math_df)
+
+# add meduy and feduy as IVs
+m3 <- lm(sat_math ~ IQ + female + black + other + meduy + feduy, data = sat_math_df)
+
+# add hours as IV
+m4 <- lm(sat_math ~ IQ + female + black + other + meduy + feduy + hours, data = sat_math_df)
+
+# add interaction female*IQ so that x = IQ + female + black + other + meduy + feduy
+# + hours + female*IQ
+# (remove IQ + female as IVs under "x =" because they are reported in the output 
+# for female*IQ interaction)
+m5 <- lm(sat_math ~ black + other + meduy + feduy + hours + female*IQ, data = sat_math_df)
+
+stargazer(m1, m2, m3, m4, m5, 
+          title="Nested Models for SAT Math Score",
+          df = F,          
+          header = F, 
+          type = "latex") %>%
+  suppressWarnings()
+```
+
+\pagebreak
+
+## Q5
+
+### Part A.
+
+```{r regression q5 a}
+summary(m1)
+```
+
+Each t-value tests the null hypothesis that $\beta_{IQ} = 0$ or $\beta_0 = 0$. In both cases, the t-value looks unusual in the t-distribution under the null hypothesis. This leads to a p-value of less than 0.05, which means we can reject the null hypothesis. 
+
+### Part B.
+
+```{r regression q5 b}
+summary(m1)
+```
+
+$\beta_{IQ} = 4.2114$, $se_{IQ} = 0.1541$
+
+95% Confidence Interval for $\beta_{IQ}$ = [4.2114 - 1.96 * 0.1541, 4.2114 + 1.96 * 0.1541] = [3.9194, 4.5234]
+
+## Q6
+
+### Part A.
+
+The coefficient for IQ remains positive, but generally decreases in value as more variables are added to the model. This suggests that some of the effect of IQ on SAT score can be explained by these additional variables, for example, mother's schooling or race. The only exception is in Model 2, where $\beta_{IQ}$ increases as additional variables are added to Model 1. In this case, adding independent variables results in an increased effect of IQ on SAT score.
+
+### Part B.
+
+The coefficient for "black" is negative, meaning that SAT score tends to decrease when the student is black. Its p-value signals that we can reject the null hypothesis (that $\beta_{black} = 0$) within the 99% confidence range. The absolute value of the coefficient is 14.519 which is second only to female in magnitude. This means that black students show an average decrease of 14.519 in their SAT score compared to white students (the omitted race category).
+
+
+### Part C.
+
+The coefficient for "meduy" is positive, meaning that SAT score tends to increase as mother's years of schooling increases. For every one unit increase in mother's years of education, we can expect a 6.434 increase in the student's SAT score. Its p-value signals that we can reject the null hypothesis (that $\beta_{meduy} = 0$) within the 99% confidence range. Its value is 6.434 which is about the same as the coefficient for feduy, meaning that the relationship between mother's schooling and SAT score has a similar direction and slope as the relationship between father's schooling and SAT score. 
+
+### Part D.
+
+The increase in SAT score resulting from a higher IQ is greater for women than for men. We see this is the graph for Question 2 Part D, where the regression for y = SAT score and x = IQ shows a steeper positive slope for women than for men.
+
+## Q7
+
+```{r regression q7}
+# create coefficient plot, remove intercept to show more precision in values for other betas
+# confidence interval is set at 95%
+coefplot(m5,
+         innerCI = 1.96, 
+         outerCI = 1.96,
+         intercept = F,
+         color = "purple",
+         title = "Coefficient Plot for Model 5",
+         )
+```
+
+## Q8
+
+```{r regression q8}
+# create data frame with values of IVs of interest, IQ and female
+# 1. create values of IQ where min = 15, max = 85, intervals = 5,
+#     then repeat twice (once for "male" and once for "female")
+# 2. create values for "female" variable where "male" and "female" 
+#     repeat 15 times each to match the number of IQ values
+# 3. fix other variables at their means
+sat_math_predIV <- tibble(IQ = rep(seq(15, 85, 5), 2)) %>%
+  mutate(
+    female = c(rep(0, 15), rep(1, 15)),
+    black = mean(sat_math_df$black),
+    other = mean(sat_math_df$other),
+    meduy = mean(sat_math_df$meduy),
+    feduy = mean(sat_math_df$feduy),
+    hours = mean(sat_math_df$hours),
+    )
+
+# predict model 5 using IQ and gender
+m5_pred <- predict(m5,
+                    sat_math_predIV,
+                    interval = "confidence",
+                    level = 0.95)
+
+# bind the columns to create new data frame
+pred_result <- cbind(sat_math_predIV, m5_pred)
+
+# plot, where dummy "female" variable is converted to character,
+# x = IQ and y = predicted SAT score, grouped by gender,
+# fill around each gender group is 95% confidence interval
+pred_result %>% 
+  mutate(gender = ifelse(female == 0, "Male", "Female")) %>%
+  ggplot(aes(x = IQ, y = fit)) +
+  geom_line(aes(linetype = gender)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = gender), alpha = 0.3) +
+  labs(x = "IQ",
+       y = "Predicted SAT Score") +
+  ggtitle("Predicted SAT Score by IQ",
+          subtitle = "(Modeled with interaction between IQ and gender)")
+```
+
+# Part 3: (Bonus) Data Simulation
+
+```{r}
+# create vector with X values
+income <- as.integer(rep(5:104, 3))
+
+# create a different error term distribution for each set of Y values
+set.seed(101)
+error1 <- rnorm(100, 0, 25)
+
+set.seed(500)
+error2 <- rnorm(100, 0, 25)
+
+set.seed(3)
+error3 <- rnorm(100, 0, 25)
+
+# create 3 vectors with 3 sets of Y values, including the error terms
+y1 <- seq(5, 1000, 10) + error1
+y2 <- seq(5, 500, 5) + error2
+y3 <- seq(5, 104) + error3
+
+# combine all Y values into one vector
+happiness <- c(y1, y2, y3)
+
+# create vector of grouping variable
+country <- rep(c("A", "B", "C"), each=100)
+
+# combine X values, Y values, and country vector into one df
+df <- cbind(income, happiness, country) %>%
+  as.data.frame()
+
+# convert variables to numeric, where appropriate
+df$income <- as.numeric(df$income)
+df$happiness <- as.numeric(df$happiness)
+
+#plot
+df %>% 
+  ggplot(aes(x = income, y = happiness, color = country)) +
+  geom_point(shape = 1, alpha = 0.5) +
+  geom_smooth(aes(linetype = country)) +
+  labs(x = "income",
+       y = "happiness") +
+  ggtitle("Relationship between Income and Happiness",
+          subtitle = "(Grouped by Country)")
+```

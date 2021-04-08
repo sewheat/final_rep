@@ -1,0 +1,7 @@
+"0","# Support Same Sex Marriage (Yes=1) = Education + Age + Gender + Race"
+"0",""
+"0","# -------Simulate IVs-------"
+"0","set.seed(123)"
+"0","# Years of education"
+"0","eduy <- rpois(1000,12) "
+"0","hist(eduy)"
