@@ -89,9 +89,74 @@ data_clean <- data_clean %>%
                     INCWAGE*0.777,           # then `incwage_adj` equals incwage*0.777,
                     INCWAGE_ADJ))            # else `incwage_adj` stays the same
 
-# determine top and bottom 1% of earnings (after adjusting for inflation) 
-######### is this the right place for this step???
+
+# remove observations of 0 from INCWAGE in order to remove top and bottom percentiles
+data_clean <- data_clean %>%
+  filter(INCWAGE_ADJ > 0)
+
 quantile(data_clean$INCWAGE_ADJ, c(.01, .99))
+
+# test = group by year, then filter out top and bottom 1%
+test <- data_clean %>%
+  group_by(YEAR) %>%
+  filter(quantile(INCWAGE_ADJ, 0.99) > INCWAGE_ADJ) %>%
+  filter(quantile(INCWAGE_ADJ, 0.01) < INCWAGE_ADJ)
+
+# test 2 = filter out top and bottom percentiles across all years (no grouping first) 
+test2 <- data_clean %>%
+  filter(INCWAGE_ADJ > 600) %>%
+  filter(INCWAGE_ADJ < 160000)
+
+quantile(test$INCWAGE_ADJ, c(.01, .99))
+quantile(test2$INCWAGE_ADJ, c(.01, .99))
+
+#### test
+
+tapply(data_clean$INCWAGE_ADJ, data_clean$YEAR, quantile, probs=c(0.01, 0.99))
+
+max(test$INCWAGE_ADJ[test$YEAR==1980])
+max(test2$INCWAGE_ADJ[test2$YEAR==1980])
+
+max(test$INCWAGE_ADJ[test$YEAR==1990])
+max(test2$INCWAGE_ADJ[test2$YEAR==1990])
+
+max(test$INCWAGE_ADJ[test$YEAR==2000])
+max(test2$INCWAGE_ADJ[test2$YEAR==2000])
+
+max(test$INCWAGE_ADJ[test$YEAR==2010])
+max(test2$INCWAGE_ADJ[test2$YEAR==2010])
+
+####
+
+
+tapply(data_clean$INCWAGE_ADJ, data_clean$YEAR, quantile, probs=c(0.01, 0.99))
+
+min(test$INCWAGE_ADJ[test$YEAR==1980])
+min(test2$INCWAGE_ADJ[test2$YEAR==1980])
+
+min(test$INCWAGE_ADJ[test$YEAR==1990])
+min(test2$INCWAGE_ADJ[test2$YEAR==1990])
+
+min(test$INCWAGE_ADJ[test$YEAR==2000])
+min(test2$INCWAGE_ADJ[test2$YEAR==2000])
+
+min(test$INCWAGE_ADJ[test$YEAR==2010])
+min(test2$INCWAGE_ADJ[test2$YEAR==2010])
+
+#### I THINK THE ABOVE IS RIGHT TO FILTER OUT TOP AND BOTTOM 1% BY YEAR?!?! CHECK AGAIN
+
+
+```
+
+
+
+```{r}
+
+data_clean %>% filter(YEAR==1980) %>%
+  quantile(INCWAGE_ADJ, c(.01, .99))
+
+# determine top and bottom 1% of earnings (after adjusting for inflation)
+#### code here
 
 # eliminate top and bottom earning percentiles (after adjusting for inflation)
 #### is this correct????
@@ -116,5 +181,48 @@ data_clean <- data_clean %>%
   mutate(WKWAGE_LOG = log(WKWAGE)) %>%
   mutate(UHRSWORK_LOG = log(UHRSWORK))
 
-str(data_clean)
+head(data_clean)
+```
+
+```{r clean data-educ}
+# check the occurrences of NA + no schooling, NA, and no schooling in EDUCD variable
+nrow(data_clean[data_clean$EDUCD==000,])         # NA + no schooling
+nrow(data_clean[data_clean$EDUCD==001,])         # NA
+nrow(data_clean[data_clean$EDUCD==002,])         # no schooling
+
+# all NAs are already eliminated, only "no schooling" remains
+
+# make sure "NA + no schooling" observations in EDUC matches "no schooling" observations in EDUCD
+nrow(data_clean[data_clean$EDUC==00,]) 
+
+# create binary categories for educational attainment
+# college grad is the omitted category
+data_clean <- data_clean %>%
+    mutate(
+    LESSHS = ifelse(EDUC < 06,       # if `EDUC` is less than 06 (grade 12),
+                    1,               # then `LESSHS` equals 1,
+                    0)) %>%         # else `LESSHS` equals 0
+ 
+    mutate(
+    HSGRAD = ifelse(EDUC == 06,       # if `EDUC` equals 06 (grade 12),
+                    1,               # then `HSGRAD` equals 1,
+                    0)) %>%         # else `HSGRAD` equals 0
+
+    mutate(
+    SOMECOL = ifelse(EDUC > 06 & EDUC < 10, # if `EDUC` is > 06 (grade 12) and < 10 (4 year col),
+                    1,                       # then `SOMECOL` equals 1,
+                    0))                  # else `SOMECOL` equals 0
+
+
+head(data_clean, 10)
+head(data_clean[data_clean$SOMECOL==1,], 20)
+
+filter(data_clean, LESSHS == 0 & HSGRAD == 0 & SOMECOL == 0)
+
+nrow(data_clean[data_clean$EDUC==07,])
+
+#### need to order these categories?? no b/c they are binary, right?
+
+
+summary(lm(INCWAGE_ADJ ~ LESSHS + HSGRAD + SOMECOL, data = data_clean))
 ```

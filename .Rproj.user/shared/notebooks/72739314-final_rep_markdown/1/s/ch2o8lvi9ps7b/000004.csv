@@ -1,0 +1,5 @@
+"0","# join data frame by OCC1990 variable
+data_clean <- left_join(data_clean, crosswalk)
+"
+"2","Joining, by = ""OCC1990""
+"
