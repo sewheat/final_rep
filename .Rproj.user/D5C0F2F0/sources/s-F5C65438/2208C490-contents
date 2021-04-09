@@ -64,12 +64,10 @@ data_clean <- data_clean %>%
 
 ```{r clean data-incwage}
 # filter out economically inactive people and NAs
-####### is this the right spot for this??
 data_clean <- data_clean %>%
   filter(LABFORCE == 2)
 
 # remove NA (999999) or Missing (999998) observations from INCWAGE
-######### i do this first right???
 data_clean <- data_clean %>%
   filter(INCWAGE < 999998)
 
@@ -89,15 +87,12 @@ data_clean <- data_clean %>%
                     INCWAGE*0.777,           # then `incwage_adj` equals incwage*0.777,
                     INCWAGE_ADJ))            # else `incwage_adj` stays the same
 
-
 # remove observations of 0 from INCWAGE in order to remove top and bottom percentiles
 data_clean <- data_clean %>%
   filter(INCWAGE_ADJ > 0)
 
-quantile(data_clean$INCWAGE_ADJ, c(.01, .99))
-
-# test = group by year, then filter out top and bottom 1%
-test <- data_clean %>%
+# group by year, then filter out top and bottom 1%
+data_clean <- data_clean %>%
   group_by(YEAR) %>%
   filter(quantile(INCWAGE_ADJ, 0.99) > INCWAGE_ADJ) %>%
   filter(quantile(INCWAGE_ADJ, 0.01) < INCWAGE_ADJ)
