@@ -1,0 +1,7 @@
+"0",""
+"0",""
+"0","# crosswalk"
+"0","test_yrssch <- left_join(test_yrssch, crosswalk_yrssch)"
+"2","Joining, by = ""EDUCD""
+"
+"0","head(test_yrssch, 20)"

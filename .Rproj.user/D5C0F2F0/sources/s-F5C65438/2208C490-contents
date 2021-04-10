@@ -91,75 +91,13 @@ data_clean <- data_clean %>%
 data_clean <- data_clean %>%
   filter(INCWAGE_ADJ > 0)
 
-# group by year, then filter out top and bottom 1%
+# group by year, then filter out top and bottom 1% for each year
 data_clean <- data_clean %>%
   group_by(YEAR) %>%
   filter(quantile(INCWAGE_ADJ, 0.99) > INCWAGE_ADJ) %>%
   filter(quantile(INCWAGE_ADJ, 0.01) < INCWAGE_ADJ)
 
-# test 2 = filter out top and bottom percentiles across all years (no grouping first) 
-test2 <- data_clean %>%
-  filter(INCWAGE_ADJ > 600) %>%
-  filter(INCWAGE_ADJ < 160000)
-
-quantile(test$INCWAGE_ADJ, c(.01, .99))
-quantile(test2$INCWAGE_ADJ, c(.01, .99))
-
-#### test
-
-tapply(data_clean$INCWAGE_ADJ, data_clean$YEAR, quantile, probs=c(0.01, 0.99))
-
-max(test$INCWAGE_ADJ[test$YEAR==1980])
-max(test2$INCWAGE_ADJ[test2$YEAR==1980])
-
-max(test$INCWAGE_ADJ[test$YEAR==1990])
-max(test2$INCWAGE_ADJ[test2$YEAR==1990])
-
-max(test$INCWAGE_ADJ[test$YEAR==2000])
-max(test2$INCWAGE_ADJ[test2$YEAR==2000])
-
-max(test$INCWAGE_ADJ[test$YEAR==2010])
-max(test2$INCWAGE_ADJ[test2$YEAR==2010])
-
-####
-
-
-tapply(data_clean$INCWAGE_ADJ, data_clean$YEAR, quantile, probs=c(0.01, 0.99))
-
-min(test$INCWAGE_ADJ[test$YEAR==1980])
-min(test2$INCWAGE_ADJ[test2$YEAR==1980])
-
-min(test$INCWAGE_ADJ[test$YEAR==1990])
-min(test2$INCWAGE_ADJ[test2$YEAR==1990])
-
-min(test$INCWAGE_ADJ[test$YEAR==2000])
-min(test2$INCWAGE_ADJ[test2$YEAR==2000])
-
-min(test$INCWAGE_ADJ[test$YEAR==2010])
-min(test2$INCWAGE_ADJ[test2$YEAR==2010])
-
-#### I THINK THE ABOVE IS RIGHT TO FILTER OUT TOP AND BOTTOM 1% BY YEAR?!?! CHECK AGAIN
-
-
-```
-
-
-
-```{r}
-
-data_clean %>% filter(YEAR==1980) %>%
-  quantile(INCWAGE_ADJ, c(.01, .99))
-
-# determine top and bottom 1% of earnings (after adjusting for inflation)
-#### code here
-
-# eliminate top and bottom earning percentiles (after adjusting for inflation)
-#### is this correct????
-data_clean <- data_clean %>%
-  filter(INCWAGE_ADJ > 0) %>%
-  filter(INCWAGE_ADJ < 150000)
-
-######### remove INCWAGE as it is no longer necessary (????? so i don't confuse myself)
+# remove INCWAGE as it is no longer necessary (so i don't confuse myself)
 data_clean <- data_clean %>%
   select(-INCWAGE)
 
@@ -175,8 +113,6 @@ data_clean <- data_clean %>%
   mutate(WKWAGE = INCWAGE_ADJ / WKSWORK2) %>%
   mutate(WKWAGE_LOG = log(WKWAGE)) %>%
   mutate(UHRSWORK_LOG = log(UHRSWORK))
-
-head(data_clean)
 ```
 
 ```{r clean data-educ}
@@ -190,8 +126,11 @@ nrow(data_clean[data_clean$EDUCD==002,])         # no schooling
 # make sure "NA + no schooling" observations in EDUC matches "no schooling" observations in EDUCD
 nrow(data_clean[data_clean$EDUC==00,]) 
 
+# they match
+
 # create binary categories for educational attainment
 # college grad is the omitted category
+##### this is correct???? i think yes
 data_clean <- data_clean %>%
     mutate(
     LESSHS = ifelse(EDUC < 06,       # if `EDUC` is less than 06 (grade 12),
@@ -208,16 +147,151 @@ data_clean <- data_clean %>%
                     1,                       # then `SOMECOL` equals 1,
                     0))                  # else `SOMECOL` equals 0
 
+# filter out below grade 1 and unspecified years of schooling (ex "Grade 7 or 8", "Bachelor's degree")
+# create vector of values to filter out
+####### filter out 110 because its 5+ years of schooling????? or keep it? its filtered now.
+####### same as above but for 113 (8+ years)
+years_filtered <- c(000, 001, 010, 011, 012, 013, 020, 021, 024, 062, 063, 064, 065, 071, 081, 082, 083, 101, 110, 113, 114, 115, 116, 999)
 
-head(data_clean, 10)
-head(data_clean[data_clean$SOMECOL==1,], 20)
+# pipe the filtering function
+test_yrssch <- data_clean %>%
+  filter(!(EDUCD %in% years_filtered))
 
-filter(data_clean, LESSHS == 0 & HSGRAD == 0 & SOMECOL == 0)
+head(test_yrssch, 20)
 
-nrow(data_clean[data_clean$EDUC==07,])
+# create new variable for years of schooling (calculated directly)
+# create new crosswalk for years of schooling
+EDUCD <- c(014, 015, 016, 017, 022, 023, 025, 026, 030, 040, 050, 060, 061, 070, 080, 090, 100, 111, 112)
 
-#### need to order these categories?? no b/c they are binary, right?
+YRSSCH <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14, 15, 16, 18, 19)
+
+crosswalk_yrssch <- cbind.data.frame(EDUCD, YRSSCH)
+crosswalk_yrssch
 
 
-summary(lm(INCWAGE_ADJ ~ LESSHS + HSGRAD + SOMECOL, data = data_clean))
+# crosswalk
+test_yrssch <- left_join(test_yrssch, crosswalk_yrssch)
+head(test_yrssch, 20)
+
+
+# create new variable "potential work experience" (age - years schooling - 6), and its square
+test_yrssch <- test_yrssch %>%
+  mutate(POTWORK = (AGE - YRSSCH - 6)) %>%
+  mutate(POTWORK_SQ = POTWORK^2)
+
+head(test_yrssch, 20)
+
+test_1990 <- test_yrssch %>% filter(YEAR==1990)
+head(test_1990)
+
+# approx equal to  male pop
+nrow(test_1990)
+
+nrow(data_clean %>% filter(YEAR==1990))
+
+# why is nrow for 1990 so small......
+
+nrow(test_yrssch %>% filter(SEX==1 & YEAR==2010))
+
+# i filtered out too much ........
+
+```
+
+```{r clean data-marriage and children}
+# create new binary variable MARST_ADJ for maritial status where 1 = married
+data_clean <- data_clean %>%
+    mutate(
+    MARST_ADJ = ifelse(MARST==1 | MARST==2,       # if `EDUC` is less than 06 (grade 12),
+                    1,                          # then `LESSHS` equals 1,
+                    0))
+
+# remove original MARST so i don't confuse myself
+data_clean <- data_clean %>%
+  select(-MARST)
+
+# create new binary variable NCHLT5_ADJ for presence of children where 1 = child present
+data_clean <- data_clean %>%
+    mutate(
+    NCHLT5_ADJ = ifelse(NCHLT5==0,       # if `NCHLT5` equals 0,
+                    0,                  # then `NCHLT5_ADJ` equals 0,
+                    1))                 # else `NCHLT5_ADJ` equals 1
+
+# remove original NCHLT5 so i don't confuse myself
+data_clean <- data_clean %>%
+  select(-NCHLT5)
+```
+
+```{r clean data-birthplace and region}
+# remove missing/blank birthplace observations
+data_clean <- data_clean %>%
+  filter(BPL < 999)
+
+# create binary variable for foreign born
+data_clean <- data_clean %>%
+    mutate(
+    BPL_ADJ = ifelse(BPL > 099,       # if `BPL` is greater than 099,
+                    0,                  # then `BPL` equals 0,
+                    1))                 # else `BPL` equals 1
+
+# remove original birthplace variables so i don't confuse myself
+data_clean <- data_clean %>%
+  select(-BPL, -BPLD)
+
+# filter out unidentified states for region variable
+data_clean <- data_clean %>%
+  filter(REGION < 97)
+
+# create binary variables for region
+# Northeast is the omitted category
+data_clean <- data_clean %>%
+    mutate(
+    MIDWST = ifelse(REGION > 13 & REGION < 31,       # if `REGION` is > 13 and < 31,
+                    1,                               # then `MIDWST` equals 1,
+                    0)) %>%                          # else `MIDWST` equals 0
+ 
+    mutate(
+    SOUTH = ifelse(REGION > 23 & REGION < 41,       # if `REGION` is > 23 and < 41,
+                    1,                              # then `SOUTH` equals 1,
+                    0)) %>%                         # else `SOUTH` equals 0
+
+    mutate(
+    WEST = ifelse(REGION > 34 & REGION < 91,     # if `REGION` is > 34 and < 91,
+                    1,                               # then `WEST` equals 1,
+                    0))                              # else `WEST` equals 0
+
+head(data_clean[data_clean$MIDWST==1,], 20)
+```
+
+```{r clean data-sector and metro area}
+# filter out NA observations for sector
+data_clean <- data_clean %>%
+  filter(CLASSWKRD > 00)
+
+# check for observations of "unpaid family worker"
+###### do i remove observations of "unpaid family worker"??? no because that was already taken care of w/ the economically active variable?
+nrow(data_clean[data_clean$CLASSWKRD==29,])
+
+# create binary variable for public sector workers (=1)
+data_clean <- data_clean %>%
+    mutate(
+    PUBLIC_SEC = ifelse(CLASSWKRD > 23 & CLASSWKRD < 29,       # if `CLASSWKRD` is > 23 and < 29,
+                    1,                                         # then `PUBLIC_SEC` equals 1,
+                    0))                                        # else `PUBLIC_SEC` equals 0
+
+# filter out indeterminable (mixed) metro area observations
+data_clean <- data_clean %>%
+  filter(METRO > 0)
+
+# create binary variable for presence in metropolitan area (=1)
+data_clean <- data_clean %>%
+    mutate(
+    METRO_ADJ = ifelse(METRO > 1,       # if `METRO` is > 1,
+                    1,                  # then `METRO_ADJ` equals 1,
+                    0))                 # else `METRO_ADJ` equals 0
+
+# remove original metro variable so i don't confuse myself
+data_clean <- data_clean %>%
+  select(-METRO)
+
+nrow(data_clean %>% filter(SEX == 1 & YEAR==2010))
 ```

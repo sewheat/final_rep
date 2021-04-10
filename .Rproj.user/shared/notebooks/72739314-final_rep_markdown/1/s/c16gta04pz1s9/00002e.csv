@@ -1,0 +1,8 @@
+"0",""
+"0",""
+"0","# create new variable ""potential work experience"" (age - years schooling - 6), and its square"
+"0","test_yrssch <- test_yrssch %>%"
+"0","  mutate(POTWORK = (AGE - YRSSCH - 6)) %>%"
+"0","  mutate(POTWORK_SQ = POTWORK^2)"
+"0",""
+"0","head(test_yrssch, 20)"

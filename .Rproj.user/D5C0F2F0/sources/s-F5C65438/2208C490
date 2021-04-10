@@ -3,7 +3,7 @@
     "path": "~/Documents/NYU/classes/Statistics/git_repos/final_rep/final_rep_markdown.Rmd",
     "project_path": "final_rep_markdown.Rmd",
     "type": "r_markdown",
-    "hash": "3427197630",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1617318099138.0,
@@ -11,16 +11,16 @@
     "relative_order": 2,
     "properties": {
         "tempName": "Untitled1",
-        "cursorPosition": "107,9",
-        "scrollLine": "82",
+        "cursorPosition": "295,50",
+        "scrollLine": "277",
         "last_setup_crc32": "F5C6543866abf5cb"
     },
     "folds": "",
-    "lastKnownWriteTime": 1617998784,
+    "lastKnownWriteTime": 1618079572,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1617998784771,
+    "last_content_update": 1618079572766,
     "read_only": false,
     "read_only_alternatives": []
 }
