@@ -418,22 +418,66 @@ print(xtable(table_A1b, type = "latex"), file = "table_A1b.tex")
 
 
 ```{r index of dissimilarity}
+# 1980 men
+occ_1980_w_m <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
 
+occ_1980_b_m <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+  
+table_1980_w_m <- table(occ_1980_w_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, W_M_1980 = Freq)
+table_1980_w_m
+
+table_1980_b_m <- table(occ_1980_b_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, B_M_1980 = Freq)
+table_1980_b_m
+
+index_1980_m <- full_join(table_1980_w_m, table_1980_b_m)
+index_1980_m
+
+dissim(data = index_1980_m[,2:3])
+```
+
+
+
+```{r}
+# saving for later
+str(data_clean$INCWAGE_ADJ[data_clean$RACE==2])
+str(data_clean$INCWAGE_ADJ[data_clean$RACE==1])
+
+# 1980 men
+occ_1980_w_m <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT) %>%
+  rename(OCC_2DIGIT_WM1980 = OCC_2DIGIT)
+
+# doesn't work
 index_1980_men <- data_clean %>%
   filter(YEAR==1980) %>%
   filter(SEX==1) %>%
   mutate(INCWAGE_ADJ_BLACK = INCWAGE_ADJ[data_clean$RACE==2]) %>%
   mutate(INCWAGE_ADJ_WHITE = INCWAGE_ADJ[data_clean$RACE==1]) %>%
   dissim()
-  
-  
-str(data_clean$INCWAGE_ADJ[data_clean$RACE==2])
-str(data_clean$INCWAGE_ADJ[data_clean$RACE==1])
-```
+
+# doesn't work
+index_1980_men <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==1) %>%
+  select(RACE, INCWAGE_ADJ) %>%
+  dissim()
 
 
-
-```{r}
 ######## belicia's code for index of dissim
 
 #male 1980 
