@@ -220,13 +220,12 @@ data_clean <- data_clean %>%
 
 ```{r clean data-sector and metro area}
 # check for observations of "unpaid family worker"
-###### do i remove observations of "unpaid family worker"??? no because that was already taken care of w/ the economically active variable?
+###### do i remove observations of "unpaid family worker" (29)??? no because that was already taken care of w/ the economically active variable?
 #nrow(data_clean[data_clean$CLASSWKRD==29,])
 
 # filter out NA observations for sector and unpaid family workers
 data_clean <- data_clean %>%
-  filter(CLASSWKRD > 00) %>%
-  filter(CLASSWKRD != 29)
+  filter(CLASSWKRD > 00)
 
 
 # create binary variable for public sector workers (=1)
@@ -417,87 +416,160 @@ print(xtable(table_A1b, type = "latex"), file = "table_A1b.tex")
 ```
 
 
-```{r index of dissimilarity}
-# 1980 men
-occ_1980_w_m <- data_clean %>%
+```{r index of dissimilarity-1980}
+###### Index for 1980 - Men
+
+# create df of occupations for white men in 1980
+occ_1980_wh_m <- data_clean %>%
   filter(YEAR==1980) %>%
   filter(SEX==1) %>%
   filter(RACE==1) %>%
   select(OCC_2DIGIT)
 
-occ_1980_b_m <- data_clean %>%
+# 1. make frequency table for white male occupations in 1980
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1980_wh_m <- table(occ_1980_wh_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_M_1980 = Freq)
+
+# create df of occupations for black men in 1980
+occ_1980_bl_m <- data_clean %>%
   filter(YEAR==1980) %>%
   filter(SEX==1) %>%
   filter(RACE==2) %>%
   select(OCC_2DIGIT)
-  
-table_1980_w_m <- table(occ_1980_w_m$OCC_2DIGIT) %>% 
+
+# 1. make frequency table for black male occupations in 1980
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1980_bl_m <- table(occ_1980_bl_m$OCC_2DIGIT) %>% 
   as.data.frame() %>%
-  rename(OCC_2DIGIT = Var1, W_M_1980 = Freq)
-table_1980_w_m
+  rename(OCC_2DIGIT = Var1, BL_M_1980 = Freq)
 
-table_1980_b_m <- table(occ_1980_b_m$OCC_2DIGIT) %>% 
+# combine both 1980 male tables in new data frame
+index_1980_men <- full_join(table_1980_wh_m, table_1980_bl_m)
+
+# find index of dissim
+dissim(data = index_1980_men[,2:3])
+
+
+###### Index for 1980 - Women
+
+# create df of occupations for white women in 1980
+occ_1980_wh_w <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white women occupations in 1980
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1980_wh_w <- table(occ_1980_wh_w$OCC_2DIGIT) %>% 
   as.data.frame() %>%
-  rename(OCC_2DIGIT = Var1, B_M_1980 = Freq)
-table_1980_b_m
+  rename(OCC_2DIGIT = Var1, WH_W_1980 = Freq)
 
-index_1980_m <- full_join(table_1980_w_m, table_1980_b_m)
-index_1980_m
+# create df of occupations for black women in 1980
+occ_1980_bl_w <- data_clean %>%
+  filter(YEAR==1980) %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
 
-dissim(data = index_1980_m[,2:3])
+# 1. make frequency table for black women occupations in 1980
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1980_bl_w <- table(occ_1980_bl_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_W_1980 = Freq)
+
+# combine both 1980 women tables in new data frame
+index_1980_women <- full_join(table_1980_wh_w, table_1980_bl_w)
+
+# find index of dissim
+dissim(data = index_1980_women[,2:3])
 ```
 
+
+```{r index of dissimilarity-1990}
+###### Index for 1990 - Men
+
+# create df of occupations for white men in 1990
+occ_1990_wh_m <- data_clean %>%
+  filter(YEAR==1990) %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white male occupations in 1990
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1990_wh_m <- table(occ_1990_wh_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_M_1990 = Freq)
+
+# create df of occupations for black men in 1990
+occ_1990_bl_m <- data_clean %>%
+  filter(YEAR==1990) %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black male occupations in 1990
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1990_bl_m <- table(occ_1990_bl_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_M_1990 = Freq)
+
+# combine both 1990 male tables in new data frame
+index_1990_men <- full_join(table_1990_wh_m, table_1990_bl_m)
+
+# find index of dissim
+dissim(data = index_1990_men[,2:3])
+
+
+###### Index for 1990 - Women
+
+# create df of occupations for white women in 1990
+occ_1990_wh_w <- data_clean %>%
+  filter(YEAR==1990) %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white women occupations in 1990
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1990_wh_w <- table(occ_1990_wh_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_W_1990 = Freq)
+
+# create df of occupations for black women in 1990
+occ_1990_bl_w <- data_clean %>%
+  filter(YEAR==1990) %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black women occupations in 1990
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_1990_bl_w <- table(occ_1990_bl_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_W_1990 = Freq)
+
+# combine both 1990 women tables in new data frame
+index_1990_women <- full_join(table_1990_wh_w, table_1990_bl_w)
+
+# find index of dissim
+dissim(data = index_1990_women[,2:3])
+```
 
 
 ```{r}
 # saving for later
 str(data_clean$INCWAGE_ADJ[data_clean$RACE==2])
 str(data_clean$INCWAGE_ADJ[data_clean$RACE==1])
-
-# 1980 men
-occ_1980_w_m <- data_clean %>%
-  filter(YEAR==1980) %>%
-  filter(SEX==1) %>%
-  filter(RACE==1) %>%
-  select(OCC_2DIGIT) %>%
-  rename(OCC_2DIGIT_WM1980 = OCC_2DIGIT)
-
-# doesn't work
-index_1980_men <- data_clean %>%
-  filter(YEAR==1980) %>%
-  filter(SEX==1) %>%
-  mutate(INCWAGE_ADJ_BLACK = INCWAGE_ADJ[data_clean$RACE==2]) %>%
-  mutate(INCWAGE_ADJ_WHITE = INCWAGE_ADJ[data_clean$RACE==1]) %>%
-  dissim()
-
-# doesn't work
-index_1980_men <- data_clean %>%
-  filter(YEAR==1980) %>%
-  filter(SEX==1) %>%
-  select(RACE, INCWAGE_ADJ) %>%
-  dissim()
-
-
-######## belicia's code for index of dissim
-
-#male 1980 
-#data_clean %>% 
-#  filter(YEAR == 1980, SEX ==1) %>% 
-#  count(RACE == 1)
-
-#male_1980 <- data_clean %>% 
-#  mutate(RACE_NEW = ifelse(RACE == 1, 
-#                       "white", 
-#                       "black"))%>% 
-#  filter(YEAR == 1980, SEX == 1) %>% 
-#  group_by(OCC1990, RACE_NEW)%>% 
-#  summarise(count = length(RACE_NEW)) %>% 
-#  pivot_wider(names_from = RACE_NEW, 
-#              values_from = count) %>% 
-#  mutate(white_diff = white/1597437) %>% 
-#  mutate(black_diff = black/168400) %>% 
-#  mutate (d = white_diff - black_diff) %>% 
-#  mutate (d = abs(d))
-
-# male1980 <- 0.5*sum(male_1980$d)
 ```
