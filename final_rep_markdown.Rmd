@@ -13,8 +13,6 @@ p_load(tidyverse, stargazer, kableExtra, ipumsr, dplyr, seg, xtable)
 # load data via IPUMS instructions
 ddi <- read_ipums_ddi("data/usa_00002.xml")
 data <- read_ipums_micro(ddi)
-
-str(data)
 ```
 
 FROM XIYAN:
@@ -40,7 +38,7 @@ data_clean <- data_clean %>%
 ```
 
 
-```{r clean data-occ1990}
+```{r clean data-occupation}
 # eliminate unemployed and unknown occupations in OCC1990
 data_clean <- data_clean %>%
   filter(OCC1990 < 991)
@@ -60,17 +58,19 @@ data_clean <- left_join(data_clean, crosswalk)
 # remove OCC1990 so i don't confuse myself
 data_clean <- data_clean %>%
   select(-OCC1990)
+
+# filter out economically inactive people and NAs
+data_clean <- data_clean %>%
+  filter(LABFORCE == 2)
 ```
 
 
 ```{r clean data-incwage and age}
-# filter out economically inactive people and NAs
-data_clean <- data_clean %>%
-  filter(LABFORCE == 2)
 
 # remove NA (999999) or Missing (999998) observations from INCWAGE
 data_clean <- data_clean %>%
-  filter(INCWAGE < 999998)
+  filter(INCWAGE != 999998) %>%
+  filter(INCWAGE != 999999)
 
 # adjust wages for inflation -> set to 1999 dollars
 # (2000 census already set to 1999 dollars)
@@ -182,7 +182,6 @@ EDUCD <- c(002, 010, 013, 014, 015, 016, 017, 020, 021, 022, 023, 024, 025, 026,
 YRSSCH <- c(0, 1.16, 2.5, 1, 2, 3, 4, 6.5, 5.5, 5, 6, 7.5, 7, 8, 9, 10, 11, 12, 12, 12, 12, 12, 12, 13, 14.5, 14, 14, 14, 14, 15, 16, 16, 17, 18, 19, 20, 18, 21)
 
 crosswalk_yrssch <- cbind.data.frame(EDUCD, YRSSCH)
-crosswalk_yrssch
 
 # crosswalk
 data_clean <- left_join(data_clean, crosswalk_yrssch)
@@ -223,7 +222,8 @@ data_clean <- data_clean %>%
 ###### do i remove observations of "unpaid family worker" (29)??? no because that was already taken care of w/ the economically active variable?
 #nrow(data_clean[data_clean$CLASSWKRD==29,])
 
-# filter out NA observations for sector and unpaid family workers
+# filter out NA observations for sector
+####### potentially also filter out observations of unpaid family worker
 data_clean <- data_clean %>%
   filter(CLASSWKRD > 00)
 
@@ -317,7 +317,7 @@ data_clean <- data_clean %>%
                     1,                               # then `WEST` equals 1,
                     0))                              # else `WEST` equals 0
 
-head(data_clean[data_clean$MIDWST==1,], 20)
+########
 
 # testing N for Table A1a
 
@@ -407,9 +407,6 @@ table_A1b <- data_clean %>%
     metro = mean(METRO_ADJ)
     ) %>%
   t()
-
-
-table_A1b
 
 # save table for latex
 print(xtable(table_A1b, type = "latex"), file = "table_A1b.tex")
@@ -563,10 +560,555 @@ table_1990_bl_w <- table(occ_1990_bl_w$OCC_2DIGIT) %>%
 # combine both 1990 women tables in new data frame
 index_1990_women <- full_join(table_1990_wh_w, table_1990_bl_w)
 
+# replace NA with 0
+index_1990_women[is.na(index_1990_women)] <- 0
+
 # find index of dissim
 dissim(data = index_1990_women[,2:3])
 ```
 
+
+```{r index of dissimilarity-2000}
+###### Index for 2000 - Men
+
+# create df of occupations for white men in 2000
+occ_2000_wh_m <- data_clean %>%
+  filter(YEAR==2000) %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white male occupations in 2000
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2000_wh_m <- table(occ_2000_wh_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_M_2000 = Freq)
+
+# create df of occupations for black men in 2000
+occ_2000_bl_m <- data_clean %>%
+  filter(YEAR==2000) %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black male occupations in 2000
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2000_bl_m <- table(occ_2000_bl_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_M_2000 = Freq)
+
+# combine both 2000 male tables in new data frame
+index_2000_men <- full_join(table_2000_wh_m, table_2000_bl_m)
+
+# find index of dissim
+dissim(data = index_2000_men[,2:3])
+
+
+###### Index for 2000 - Women
+
+# create df of occupations for white women in 2000
+occ_2000_wh_w <- data_clean %>%
+  filter(YEAR==2000) %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white women occupations in 2000
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2000_wh_w <- table(occ_2000_wh_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_W_2000 = Freq)
+
+# create df of occupations for black women in 2000
+occ_2000_bl_w <- data_clean %>%
+  filter(YEAR==2000) %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black women occupations in 2000
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2000_bl_w <- table(occ_2000_bl_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_W_2000 = Freq)
+
+# combine both 2000 women tables in new data frame
+index_2000_women <- full_join(table_2000_wh_w, table_2000_bl_w)
+
+# find index of dissim
+dissim(data = index_2000_women[,2:3])
+```
+
+
+```{r index of dissimilarity-2010}
+###### Index for 2010 - Men
+
+# create df of occupations for white men in 2010
+occ_2010_wh_m <- data_clean %>%
+  filter(YEAR==2010) %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white male occupations in 2010
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2010_wh_m <- table(occ_2010_wh_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_M_2010 = Freq)
+
+# create df of occupations for black men in 2010
+occ_2010_bl_m <- data_clean %>%
+  filter(YEAR==2010) %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black male occupations in 2010
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2010_bl_m <- table(occ_2010_bl_m$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_M_2010 = Freq)
+
+# combine both 2010 male tables in new data frame
+index_2010_men <- full_join(table_2010_wh_m, table_2010_bl_m)
+
+# find index of dissim
+dissim(data = index_2010_men[,2:3])
+
+
+###### Index for 2010 - Women
+
+# create df of occupations for white women in 2010
+occ_2010_wh_w <- data_clean %>%
+  filter(YEAR==2010) %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for white women occupations in 2010
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2010_wh_w <- table(occ_2010_wh_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, WH_W_2010 = Freq)
+
+# create df of occupations for black women in 2010
+occ_2010_bl_w <- data_clean %>%
+  filter(YEAR==2010) %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  select(OCC_2DIGIT)
+
+# 1. make frequency table for black women occupations in 2010
+# 2. convert to data frame
+# 3. rename columns for clarity and consistency
+table_2010_bl_w <- table(occ_2010_bl_w$OCC_2DIGIT) %>% 
+  as.data.frame() %>%
+  rename(OCC_2DIGIT = Var1, BL_W_2010 = Freq)
+
+# combine both 2010 women tables in new data frame
+index_2010_women <- full_join(table_2010_wh_w, table_2010_bl_w)
+
+# replace NA with 0
+index_2010_women[is.na(index_2010_women)] <- 0
+
+# find index of dissim
+dissim(data = index_2010_women[,2:3])
+```
+
+```{r figure 1}
+# 1. group by year, then sex, then race
+# 2. report average weekly wage for each group
+# 3. rename SEX values to be more intuitive (1 = male, 2 = female)
+# 3. rename RACE values to be more intuitive (1 = white, 2 = black)
+fig1 <- data_clean %>%
+  group_by(YEAR, SEX, RACE) %>%
+  summarise(AVG_WKWAGE = mean(WKWAGE)) %>%
+  mutate(SEX = ifelse(SEX==1, "male", "female")) %>%
+  mutate(RACE = ifelse(RACE==1, "white", "black"))
+
+# create new variable that combines RACE and SEX
+fig1$RACE_SEX <- paste(fig1$RACE, fig1$SEX)
+
+# open PDF file, width and height in inches
+pdf("figure_1.pdf", width = 6, height = 4) 
+
+# plot
+fig1 %>%
+  ggplot(aes(x = YEAR, y = AVG_WKWAGE, color = RACE_SEX, shape = RACE_SEX)) +
+  geom_line(aes(linetype = RACE_SEX)) +
+  geom_point() +
+  labs(title = "Figure 1. Average Weekly Earnings by Race and Gender, 1970 - 2010",
+       subtitle = "(in Constant $US)",
+       x = "Year",
+       y = "Average Weekly Earnings") +
+  theme(legend.position = "bottom", legend.title = element_blank())
+
+# close the PDF file
+dev.off()
+```
+
+```{r table A2a}
+# filter for:
+# 1. men
+# 2. white people
+# 3. year 1980
+df_1980_wh_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==1980)  
+
+# create object for linear model where y = log weekly wages
+lm_1980_wh_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1980_wh_m)
+
+# filter for:
+# 1. men
+# 2. black people
+# 3. year 1980
+df_1980_bl_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==1980)  
+
+# create object for linear model where y = log weekly wages
+lm_1980_bl_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1980_bl_m)
+
+# filter for:
+# 1. men
+# 2. white people
+# 3. year 1990
+df_1990_wh_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==1990)  
+
+# create object for linear model where y = log weekly wages
+lm_1990_wh_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1990_wh_m)
+
+# filter for:
+# 1. men
+# 2. black people
+# 3. year 1990
+df_1990_bl_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==1990)  
+
+# create object for linear model where y = log weekly wages
+lm_1990_bl_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1990_bl_m)
+
+# filter for:
+# 1. men
+# 2. white people
+# 3. year 2000
+df_2000_wh_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==2000)  
+
+# create object for linear model where y = log weekly wages
+lm_2000_wh_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2000_wh_m)
+
+# filter for:
+# 1. men
+# 2. black people
+# 3. year 2000
+df_2000_bl_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==2000)  
+
+# create object for linear model where y = log weekly wages
+lm_2000_bl_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2000_bl_m)
+
+# filter for:
+# 1. men
+# 2. white people
+# 3. year 2010
+df_2010_wh_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==2010)  
+
+# create object for linear model where y = log weekly wages
+lm_2010_wh_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2010_wh_m)
+
+# filter for:
+# 1. men
+# 2. black people
+# 3. year 2010
+df_2010_bl_m <- data_clean %>%
+  filter(SEX==1) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==2010)  
+
+# create object for linear model where y = log weekly wages
+lm_2010_bl_m <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2010_bl_m)
+
+
+table_A2a <- stargazer(lm_1980_wh_m, lm_1980_bl_m, 
+          lm_1990_wh_m, lm_1990_bl_m, 
+          lm_2000_wh_m, lm_2000_bl_m, 
+          lm_2010_wh_m, lm_2010_bl_m, 
+          df = F, header = F,
+          type = "latex")
+```
+
+```{r table A2b}
+# filter for:
+# 1. women
+# 2. white people
+# 3. year 1980
+df_1980_wh_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==1980)  
+
+# create object for linear model where y = log weekly wages
+lm_1980_wh_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1980_wh_w)
+
+# filter for:
+# 1. women
+# 2. black people
+# 3. year 1980
+df_1980_bl_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==1980)  
+
+# create object for linear model where y = log weekly wages
+lm_1980_bl_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1980_bl_w)
+
+# filter for:
+# 1. women
+# 2. white people
+# 3. year 1990
+df_1990_wh_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==1990)  
+
+# create object for linear model where y = log weekly wages
+lm_1990_wh_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1990_wh_w)
+
+# filter for:
+# 1. women
+# 2. black people
+# 3. year 1990
+df_1990_bl_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==1990)  
+
+# create object for linear model where y = log weekly wages
+lm_1990_bl_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_1990_bl_w)
+
+# filter for:
+# 1. women
+# 2. white people
+# 3. year 2000
+df_2000_wh_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==2000)  
+
+# create object for linear model where y = log weekly wages
+lm_2000_wh_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2000_wh_w)
+
+# filter for:
+# 1. women
+# 2. black people
+# 3. year 2000
+df_2000_bl_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==2000)  
+
+# create object for linear model where y = log weekly wages
+lm_2000_bl_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2000_bl_w)
+
+# filter for:
+# 1. women
+# 2. white people
+# 3. year 2010
+df_2010_wh_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==1) %>%
+  filter(YEAR==2010)  
+
+# create object for linear model where y = log weekly wages
+lm_2010_wh_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2010_wh_w)
+
+# filter for:
+# 1. women
+# 2. black people
+# 3. year 2010
+df_2010_bl_w <- data_clean %>%
+  filter(SEX==2) %>%
+  filter(RACE==2) %>%
+  filter(YEAR==2010)  
+
+# create object for linear model where y = log weekly wages
+lm_2010_bl_w <- lm(WKWAGE_LOG ~ POTWORK + POTWORK_SQ + 
+                     LESSHS + HSGRAD + SOMECOL +
+                     NCHILD + NCHLT5_ADJ +
+                     MARST_ADJ +
+                     BPL_ADJ + 
+                     UHRSWORK_LOG +
+                     METRO_ADJ +
+                     PUBLIC_SEC +
+                     MIDWST + SOUTH + WEST, 
+                   data = df_2010_bl_w)
+
+
+table_A2b <- stargazer(lm_1980_wh_w, lm_1980_bl_w, 
+          lm_1990_wh_w, lm_1990_bl_w, 
+          lm_2000_wh_w, lm_2000_bl_w, 
+          lm_2010_wh_w, lm_2010_bl_w, 
+          df = F, header = F,
+          type = "latex")
+```
 
 ```{r}
 # saving for later
