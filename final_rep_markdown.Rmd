@@ -113,29 +113,29 @@ data_clean <- data_clean %>%
 # create new variable for weeks worked adjusted
 data_clean <- data_clean %>%
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 1,       # if `year` equals 1980,
-                    7,           # then `incwage_adj` equals incwage*2.295,
-                    WKSWORK2)) %>%            # else `incwage_adj` equals 'incwage'
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 1,       # if `WKSWORK2` equals 1,
+                    7,                        # then `WKSWORK2_ADJ` equals 7 weeks,
+                    WKSWORK2)) %>%            # else `WKSWORK2_ADJ` equals 'WKSWORK2'
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 2,       # if `year` equals 1990,
-                    20,           # then `incwage_adj` equals incwage*1.344,
-                    WKSWORK2_ADJ)) %>%        # else `incwage_adj` stays the same
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 2,       # if `WKSWORK2` equals 2,
+                    20,                       # then `WKSWORK2_ADJ` equals 20 weeks,
+                    WKSWORK2_ADJ)) %>%        # else `WKSWORK2_ADJ` stays the same
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 3,       # if `year` equals 2010,
-                    33,           # then `incwage_adj` equals incwage*0.777,
-                    WKSWORK2_ADJ)) %>%            # else `incwage_adj` stays the same
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 3,       # if `WKSWORK2` equals 3,
+                    33,                       # then `WKSWORK2_ADJ` equals 33 weeks,
+                    WKSWORK2_ADJ)) %>%         # else `WKSWORK2_ADJ` stays the same
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 4,       # if `year` equals 2010,
-                    43.5,           # then `incwage_adj` equals incwage*0.777,
-                    WKSWORK2_ADJ)) %>% 
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 4,       # if `WKSWORK2` equals 4,
+                    43.5,                     # then `WKSWORK2_ADJ` equals 43.5,
+                    WKSWORK2_ADJ)) %>%        # else `WKSWORK2_ADJ` stays the same
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 5,       # if `year` equals 2010,
-                    48.5,           # then `incwage_adj` equals incwage*0.777,
-                    WKSWORK2_ADJ)) %>% 
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 5,      # if `WKSWORK2` equals 5,
+                    48.5,                     # then `WKSWORK2_ADJ` equals 48.5,
+                    WKSWORK2_ADJ)) %>%        # else `WKSWORK2_ADJ` stays the same
     mutate(
-    WKSWORK2_ADJ = ifelse(WKSWORK2 == 6,       # if `year` equals 2010,
-                    51,           # then `incwage_adj` equals incwage*0.777,
-                    WKSWORK2_ADJ))
+    WKSWORK2_ADJ = ifelse(WKSWORK2 == 6,       # if `WKSWORK2` equals 6,
+                    51,                      # then `WKSWORK2_ADJ` equals 51,
+                    WKSWORK2_ADJ))           # else `WKSWORK2_ADJ` stays the same
 
 # remove WKSWORK2 as it is no longer necessary (so i don't confuse myself)
 data_clean <- data_clean %>%
@@ -174,8 +174,8 @@ data_clean <- data_clean %>%
 # create new variable for years of schooling
 # create new crosswalk between EDUC / YRSSCH and recode unspecified years of schooling
   # (ex "Grade 7 or 8" = 7.5, "Bachelor's degree" = 16, "8+" = 8)
-######### include GED? 064
-######### for 065 i made it 12....? because thats the highest completed
+######### include GED: 064
+######### for 065 i made it 12...because thats the highest completed
 ######### doctoral is 5 years + college
 EDUCD <- c(002, 010, 013, 014, 015, 016, 017, 020, 021, 022, 023, 024, 025, 026, 030, 040, 050, 060, 061, 062, 063, 064, 065, 070, 071, 080, 081, 082, 083, 090, 100, 101, 110, 111, 112, 113, 114, 116)
 
@@ -185,7 +185,6 @@ crosswalk_yrssch <- cbind.data.frame(EDUCD, YRSSCH)
 
 # crosswalk
 data_clean <- left_join(data_clean, crosswalk_yrssch)
-head(data_clean, 20)
 
 # create binary categories for educational attainment
 # college grad is the omitted category
@@ -205,7 +204,7 @@ data_clean <- data_clean %>%
                     1,                       # then `SOMECOL` equals 1,
                     0)) %>%                 # else `SOMECOL` equals 0
     mutate(
-    COLGRAD = ifelse(EDUC >= 10, # if `EDUC` is > or = 10 (4 year col),
+    COLGRAD = ifelse(EDUC >= 10,             # if `EDUC` is > or = 10 (4 year col),
                     1,                       # then `COLGRAD` equals 1,
                     0))                      # else `COLGRAD` equals 0
 
@@ -219,7 +218,7 @@ data_clean <- data_clean %>%
 
 ```{r clean data-sector and metro area}
 # check for observations of "unpaid family worker"
-###### do i remove observations of "unpaid family worker" (29)??? no because that was already taken care of w/ the economically active variable?
+###### do i remove observations of "unpaid family worker" (29)??? no because that was already taken care of w/ the economically active variable
 #nrow(data_clean[data_clean$CLASSWKRD==29,])
 
 # filter out NA observations for sector
@@ -231,7 +230,7 @@ data_clean <- data_clean %>%
 # create binary variable for public sector workers (=1)
 data_clean <- data_clean %>%
     mutate(
-    PUBLIC_SEC = ifelse(CLASSWKRD > 23 & CLASSWKRD <= 28,       # if `CLASSWKRD` is > 23 and <=28,
+    PUBLIC_SEC = ifelse(CLASSWKRD > 23 & CLASSWKRD <= 28,       # if `CLASSWKRD` is >23 and <=28,
                     1,                                         # then `PUBLIC_SEC` equals 1,
                     0))                                        # else `PUBLIC_SEC` equals 0
 
@@ -256,15 +255,16 @@ data_clean <- data_clean %>%
 # create new binary variable MARST_ADJ for marital status where 1 = married
 data_clean <- data_clean %>%
     mutate(
-    MARST_ADJ = ifelse(MARST==1 | MARST==2,       # if `EDUC` is less than 06 (grade 12),
-                    1,                          # then `LESSHS` equals 1,
-                    0))
+    MARST_ADJ = ifelse(MARST==1 | MARST==2,    # if `MARST` equals 1 or 2,
+                    1,                        # then `MARST_ADJ` equals 1,
+                    0))                       # else `MARST_ADJ` equals 0
 
 # remove original MARST so i don't confuse myself
 data_clean <- data_clean %>%
   select(-MARST)
 
-# create new binary variable NCHLT5_ADJ for presence of children where 1 = child present
+# create new binary variable NCHLT5_ADJ for presence of children under 5 
+# where 1 = child present
 data_clean <- data_clean %>%
     mutate(
     NCHLT5_ADJ = ifelse(NCHLT5==0,       # if `NCHLT5` equals 0,
@@ -281,12 +281,12 @@ data_clean <- data_clean %>%
 data_clean <- data_clean %>%
   filter(BPL < 999)
 
-# create binary variable for foreign born
+# create binary variable for foreign born where 1 = foreign born
 data_clean <- data_clean %>%
     mutate(
     BPL_ADJ = ifelse(BPL > 099,       # if `BPL` is greater than 099,
-                    0,                  # then `BPL` equals 0,
-                    1))                 # else `BPL` equals 1
+                    1,                  # then `BPL_ADJ` equals 1,
+                    0))                 # else `BPL_ADJ` equals 0
 
 # remove original birthplace variables so i don't confuse myself
 data_clean <- data_clean %>%
