@@ -316,26 +316,6 @@ data_clean <- data_clean %>%
     WEST = ifelse(REGION > 34 & REGION < 91,     # if `REGION` is > 34 and < 91,
                     1,                               # then `WEST` equals 1,
                     0))                              # else `WEST` equals 0
-
-########
-
-# testing N for Table A1a
-
-nrow(data_clean %>% filter(SEX==1 & YEAR==1980))
-# should be...
-1246589 + 146484
-
-nrow(data_clean %>% filter(SEX==1 & YEAR==1990))
-# should be...
-293404 + 29857
-
-nrow(data_clean %>% filter(SEX==1 & YEAR==2000))
-# should be...
-1446271 + 171000
-
-nrow(data_clean %>% filter(SEX==1 & YEAR==2010))
-# should be...
-275239 + 33215
 ```
 
 
@@ -374,6 +354,48 @@ table_A1a <- data_clean %>%
 
 # save table for latex
 print(xtable(table_A1a, type = "latex"), file = "table_A1a.tex")
+
+##### find N for each year / race combination
+
+# white men in 1980
+nrow(data_clean %>% filter(SEX==1 & RACE==1 & YEAR==1980))
+# should be...
+1246589 
+
+# black men in 1980
+nrow(data_clean %>% filter(SEX==1 & RACE==2 & YEAR==1980))
+# should be...
+146484
+
+# white men in 1990
+nrow(data_clean %>% filter(SEX==1 & RACE==1 & YEAR==1990))
+# should be...
+293404 
+
+# black men in 1990
+nrow(data_clean %>% filter(SEX==1 & RACE==2 & YEAR==1990))
+# should be...
+29857
+
+# white men in 2000
+nrow(data_clean %>% filter(SEX==1 & RACE==1 & YEAR==2000))
+# should be...
+1446271 
+
+# black men in 2000
+nrow(data_clean %>% filter(SEX==1 & RACE==2 & YEAR==2000))
+# should be...
+171000
+
+# white men in 2010
+nrow(data_clean %>% filter(SEX==1 & RACE==1 & YEAR==2010))
+# should be...
+275239 
+
+# black men in 2010
+nrow(data_clean %>% filter(SEX==1 & RACE==2 & YEAR==2010))
+# should be...
+33215
 ```
 
 
@@ -410,6 +432,32 @@ table_A1b <- data_clean %>%
 
 # save table for latex
 print(xtable(table_A1b, type = "latex"), file = "table_A1b.tex")
+
+##### find N for each year / race combination
+
+# white women in 1980
+nrow(data_clean %>% filter(SEX==2 & RACE==1 & YEAR==1980))
+
+# black women in 1980
+nrow(data_clean %>% filter(SEX==2 & RACE==2 & YEAR==1980))
+
+# white women in 1990
+nrow(data_clean %>% filter(SEX==2 & RACE==1 & YEAR==1990))
+
+# black women in 1990
+nrow(data_clean %>% filter(SEX==2 & RACE==2 & YEAR==1990))
+
+# white women in 2000
+nrow(data_clean %>% filter(SEX==2 & RACE==1 & YEAR==2000))
+
+# black women in 2000
+nrow(data_clean %>% filter(SEX==2 & RACE==2 & YEAR==2000))
+
+# white women in 2010
+nrow(data_clean %>% filter(SEX==2 & RACE==1 & YEAR==2010))
+
+# black women in 2010
+nrow(data_clean %>% filter(SEX==2 & RACE==2 & YEAR==2010))
 ```
 
 
@@ -450,6 +498,8 @@ index_1980_men <- full_join(table_1980_wh_m, table_1980_bl_m)
 # find index of dissim
 dissim(data = index_1980_men[,2:3])
 
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_1980_men)
 
 ###### Index for 1980 - Women
 
@@ -486,6 +536,9 @@ index_1980_women <- full_join(table_1980_wh_w, table_1980_bl_w)
 
 # find index of dissim
 dissim(data = index_1980_women[,2:3])
+
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_1980_women)
 ```
 
 
@@ -526,6 +579,8 @@ index_1990_men <- full_join(table_1990_wh_m, table_1990_bl_m)
 # find index of dissim
 dissim(data = index_1990_men[,2:3])
 
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_1990_men)
 
 ###### Index for 1990 - Women
 
@@ -565,6 +620,9 @@ index_1990_women[is.na(index_1990_women)] <- 0
 
 # find index of dissim
 dissim(data = index_1990_women[,2:3])
+
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_1990_women)
 ```
 
 
@@ -605,6 +663,8 @@ index_2000_men <- full_join(table_2000_wh_m, table_2000_bl_m)
 # find index of dissim
 dissim(data = index_2000_men[,2:3])
 
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_2000_men)
 
 ###### Index for 2000 - Women
 
@@ -641,6 +701,9 @@ index_2000_women <- full_join(table_2000_wh_w, table_2000_bl_w)
 
 # find index of dissim
 dissim(data = index_2000_women[,2:3])
+
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_2000_women)
 ```
 
 
@@ -681,6 +744,8 @@ index_2010_men <- full_join(table_2010_wh_m, table_2010_bl_m)
 # find index of dissim
 dissim(data = index_2010_men[,2:3])
 
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_2010_men)
 
 ###### Index for 2010 - Women
 
@@ -720,6 +785,9 @@ index_2010_women[is.na(index_2010_women)] <- 0
 
 # find index of dissim
 dissim(data = index_2010_women[,2:3])
+
+# find number of factors for OCC_2DIGIT to use in index of dissim "N"
+summary(index_2010_women)
 ```
 
 ```{r figure 1}
@@ -744,7 +812,7 @@ fig1 %>%
   ggplot(aes(x = YEAR, y = AVG_WKWAGE, color = RACE_SEX, shape = RACE_SEX)) +
   geom_line(aes(linetype = RACE_SEX)) +
   geom_point() +
-  labs(title = "Figure 1. Average Weekly Earnings by Race and Gender, 1970 - 2010",
+  labs(title = "Fig 1. Average Weekly Earnings by Race and Gender, 1980 - 2010",
        subtitle = "(in Constant $US)",
        x = "Year",
        y = "Average Weekly Earnings") +
@@ -1110,8 +1178,3 @@ table_A2b <- stargazer(lm_1980_wh_w, lm_1980_bl_w,
           type = "latex")
 ```
 
-```{r}
-# saving for later
-str(data_clean$INCWAGE_ADJ[data_clean$RACE==2])
-str(data_clean$INCWAGE_ADJ[data_clean$RACE==1])
-```
