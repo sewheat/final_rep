@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup}
 library(pacman)
-p_load(tidyverse, stargazer, kableExtra, ipumsr, dplyr, seg, xtable, tikzDevice)
+p_load(tidyverse, stargazer, kableExtra, ipumsr, dplyr, seg, xtable)
 
 # load data via IPUMS instructions
 ddi <- read_ipums_ddi("data/usa_00002.xml")
